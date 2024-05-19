@@ -4,14 +4,11 @@ using System.Text;
 
 const int portNumber = 4221;
 TcpListener server = null;
-// Currently target receiving up to 1KiB at a time
-var buffer = new byte[1 * 1024];
 
 // There doesn't seem to be a built-in const in .NET to do CRLFs specifically.
 // Just Environment.NewLine, which isn't guaranteed to be CRLF.
 const string crlf = "\r\n";
 const string okResponseHeader = "HTTP/1.1 200 OK" + crlf;
-
 
 try
 {
@@ -21,9 +18,12 @@ try
     while (true)
     {
         using Socket socket = await server.AcceptSocketAsync();
-        int bytesReceived = await socket.ReceiveAsync(buffer);
+        // int bytesReceived = await socket.ReceiveAsync(buffer);
 
-        Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
+        // Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
+
+        string requestString = await ReceiveRequest(socket);
+        Request request = ParseRequest(requestString);
 
         // Not actually doing a response yet
         string responseBody = string.Empty + crlf;
@@ -56,6 +56,7 @@ return;
 
 Dictionary<string, string> ParseHeaders(string headers)
 {
+    // Not parsing the headers just yet
     throw new NotImplementedException();
 }
 
@@ -98,6 +99,30 @@ async Task SendResponse(Socket socket, string message)
         // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-8.0
         bytesSent += await socket.SendAsync(responseBytes.AsMemory(bytesSent), SocketFlags.None);
     }
+}
+
+async Task<string> ReceiveRequest(Socket socket)
+{
+    var receivedBytes = new byte[1 * 1024];
+    var receivedChars = new char[1 * 1024];
+    var builder = new StringBuilder();
+
+    while (true)
+    {
+        int bytesReceived = await socket.ReceiveAsync(receivedBytes);
+
+        Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
+
+        if (bytesReceived == 0)
+        {
+            break;
+        }
+
+        int charCount = Encoding.ASCII.GetChars(receivedBytes, 0, bytesReceived, receivedChars, 0);
+        builder.Append(receivedChars[.. charCount]);
+    }
+
+    return builder.ToString();
 }
 
 record Request(string requestLine, Dictionary<string, string> headers, string body);
