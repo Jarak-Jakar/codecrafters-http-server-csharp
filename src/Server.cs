@@ -8,6 +8,7 @@ TcpListener server = null;
 // There doesn't seem to be a built-in const in .NET to do CRLFs specifically.
 // Just Environment.NewLine, which isn't guaranteed to be CRLF.
 const string crlf = "\r\n";
+int crlfLength = crlf.Length;
 const string okResponseHeader = "HTTP/1.1 200 OK" + crlf;
 
 try
@@ -33,6 +34,7 @@ try
 
         Console.WriteLine("Finished sending the response");
 
+        await socket.DisconnectAsync(true, CancellationToken.None);
         socket.Shutdown(SocketShutdown.Both);
         socket.Close();
 
@@ -68,19 +70,22 @@ Request ParseRequest(string request)
 (string, string, string) ExtractSections(string request)
 {
     // Request line is everything up to the first crlf
-    int requestLineBoundary = request.IndexOf(crlf, StringComparison.Ordinal);
+    int requestLineBoundary = request.IndexOf(crlf, StringComparison.Ordinal) + crlfLength;
 
-    string requestLine = request[.. request.IndexOf(crlf, StringComparison.Ordinal)];
+    string requestLine = request[.. requestLineBoundary];
 
     // Headers is everything until a double CRLF
     string remainder = request[requestLineBoundary..];
 
-    int headersBoundary = remainder.IndexOf(crlf + crlf, StringComparison.Ordinal);
+    int headersBoundary = remainder.IndexOf(crlf + crlf, StringComparison.Ordinal) + 2 * crlfLength;
 
     string headers = remainder[.. headersBoundary];
 
     // Body is everything after the headers
     string body = remainder[headersBoundary..];
+
+    Console.WriteLine(
+        $"{nameof(requestLine)}: {requestLine} --- {nameof(headers)}: {string.Join('\n', headers)} --- {nameof(body)}: {body}");
 
     return (requestLine, headers, body);
 }
