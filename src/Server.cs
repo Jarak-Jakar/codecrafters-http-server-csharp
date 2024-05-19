@@ -18,9 +18,6 @@ try
     while (true)
     {
         using Socket socket = await server.AcceptSocketAsync();
-        // int bytesReceived = await socket.ReceiveAsync(buffer);
-
-        // Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
 
         string requestString = await ReceiveRequest(socket);
         Request request = ParseRequest(requestString);
@@ -103,13 +100,14 @@ async Task SendResponse(Socket socket, string message)
 
 async Task<string> ReceiveRequest(Socket socket)
 {
-    var receivedBytes = new byte[1 * 1024];
-    var receivedChars = new char[1 * 1024];
+    const int bytesCount = 1 * 1024;
+    var receivedBytes = new byte[bytesCount];
+    var receivedChars = new char[bytesCount];
     var builder = new StringBuilder();
 
     while (true)
     {
-        int bytesReceived = await socket.ReceiveAsync(receivedBytes);
+        int bytesReceived = await socket.ReceiveAsync(receivedBytes, SocketFlags.None, CancellationToken.None);
 
         Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
 
@@ -125,4 +123,4 @@ async Task<string> ReceiveRequest(Socket socket)
     return builder.ToString();
 }
 
-record Request(string requestLine, Dictionary<string, string> headers, string body);
+record Request(string RequestLine, Dictionary<string, string> Headers, string Body);
