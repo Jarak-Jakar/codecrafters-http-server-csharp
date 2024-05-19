@@ -61,7 +61,8 @@ Request ParseRequest(string request)
 {
     (string requestLine, string headers, string body) = ExtractSections(request);
 
-    return new Request(requestLine, ParseHeaders(headers), body);
+    // return new Request(requestLine, ParseHeaders(headers), body);
+    return new Request(requestLine, new Dictionary<string, string>(), body);
 }
 
 (string, string, string) ExtractSections(string request)
@@ -105,20 +106,12 @@ async Task<string> ReceiveRequest(Socket socket)
     var receivedChars = new char[bytesCount];
     var builder = new StringBuilder();
 
-    while (true)
-    {
-        int bytesReceived = await socket.ReceiveAsync(receivedBytes, SocketFlags.None, CancellationToken.None);
+    int bytesReceived = await socket.ReceiveAsync(receivedBytes, SocketFlags.None, CancellationToken.None);
 
-        Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
+    Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
 
-        if (bytesReceived == 0)
-        {
-            break;
-        }
-
-        int charCount = Encoding.ASCII.GetChars(receivedBytes, 0, bytesReceived, receivedChars, 0);
-        builder.Append(receivedChars[.. charCount]);
-    }
+    int charCount = Encoding.ASCII.GetChars(receivedBytes, 0, bytesReceived, receivedChars, 0);
+    builder.Append(receivedChars[.. charCount]);
 
     return builder.ToString();
 }
