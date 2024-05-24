@@ -17,5 +17,6 @@ public static class StatusLines
 
 public static class HeaderTypes
 {
+    public const string ContentType = "Content-Type";
     public const string ContentLength = "Content-Length";
 }

@@ -12,25 +12,48 @@ public static class ResponseProcessor
         var bytesSent = 0;
 
         while (bytesSent < responseBytes.Length)
+        {
             // This bit basically copied on 19 May 2024 from
             // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-8.0
             bytesSent += await socket.SendAsync(responseBytes.AsMemory(bytesSent), SocketFlags.None);
+        }
     }
 
     public static string BuildResponse(Request request)
     {
-        string statusLine = request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase)
-            ? StatusLines.Ok
-            : StatusLines.NotFound;
+        string statusLine;
+        var headers = new Dictionary<string, string>();
+        var body = string.Empty;
 
-        statusLine += Constants.Crlf;
-        
-        // Not actually doing headers just yet
-        string headers = string.Empty + Constants.Crlf;
+        if (request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase))
+        {
+            statusLine = StatusLines.Ok;
+        }
+        else if (request.RequestLine.Target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase))
+        {
+            // Do the echo situation
+            statusLine = StatusLines.Ok;
+            body = request.RequestLine.Target[6..];
+            headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+            headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+        }
+        else
+        {
+            statusLine = StatusLines.NotFound;
+        }
 
-        // Not actually doing a response yet
-        string body = string.Empty;
+        return statusLine + CombineHeaders(headers) + body;
+    }
 
-        return statusLine + headers + body;
+    private static string CombineHeaders(Dictionary<string, string> headers)
+    {
+        var builder = new StringBuilder();
+        foreach (var header in headers)
+        {
+            builder.Append($"{header.Key}: {header.Value}{Constants.Crlf}");
+        }
+
+        builder.Append(Constants.Crlf);
+        return builder.ToString();
     }
 }
