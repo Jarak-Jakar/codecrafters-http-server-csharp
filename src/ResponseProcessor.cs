@@ -19,13 +19,18 @@ public static class ResponseProcessor
 
     public static string BuildResponse(Request request)
     {
-        string responseHeader = request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase)
-            ? Constants.OkResponseHeader
-            : Constants.NotFoundResponseHeader;
+        string statusLine = request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase)
+            ? StatusLines.Ok
+            : StatusLines.NotFound;
+
+        statusLine += Constants.Crlf;
+        
+        // Not actually doing headers just yet
+        string headers = string.Empty + Constants.Crlf;
 
         // Not actually doing a response yet
-        string responseBody = string.Empty + Constants.Crlf;
+        string body = string.Empty;
 
-        return responseHeader + responseBody;
+        return statusLine + headers + body;
     }
 }
