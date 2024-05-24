@@ -10,6 +10,7 @@ TcpListener server = null;
 const string crlf = "\r\n";
 int crlfLength = crlf.Length;
 const string okResponseHeader = "HTTP/1.1 200 OK" + crlf;
+const string notFoundResponseHeader = "HTTP/1.1 404 Not Found" + crlf;
 
 try
 {
@@ -21,12 +22,19 @@ try
         using Socket socket = await server.AcceptSocketAsync();
 
         string requestString = await ReceiveRequest(socket);
+
+        Console.WriteLine($"{requestString}");
+
         Request request = ParseRequest(requestString);
+
+        string responseHeader = request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase)
+            ? okResponseHeader
+            : notFoundResponseHeader;
 
         // Not actually doing a response yet
         string responseBody = string.Empty + crlf;
 
-        string response = okResponseHeader + responseBody;
+        string response = responseHeader + responseBody;
 
         Console.WriteLine($"Going to send response: {response}");
 
@@ -61,11 +69,10 @@ Dictionary<string, string> ParseHeaders(string headers)
 
 Request ParseRequest(string request)
 {
-    (string requestLine, string headers, string body) = ExtractSections(request);
-
-    // return new Request(requestLine, ParseHeaders(headers), body);
-    return new Request(requestLine, new Dictionary<string, string>(), body);
+    (string requestLine, string _, string body) = ExtractSections(request);
+    return new Request(ParseRequestLine(requestLine), new Dictionary<string, string>(), body);
 }
+
 
 (string, string, string) ExtractSections(string request)
 {
@@ -88,6 +95,14 @@ Request ParseRequest(string request)
         $"{nameof(requestLine)}: {requestLine} --- {nameof(headers)}: {string.Join('\n', headers)} --- {nameof(body)}: {body}");
 
     return (requestLine, headers, body);
+}
+
+RequestLine ParseRequestLine(string requestLine)
+{
+    // Assuming for now that there will be exactly one space separating the three parts.  I'm not sure if this is a
+    // valid assumption in general, though. 
+    string[] elements = requestLine.Split(' ', StringSplitOptions.TrimEntries);
+    return new RequestLine(elements[0], elements[1], elements[2]);
 }
 
 async Task SendResponse(Socket socket, string message)
@@ -121,4 +136,6 @@ async Task<string> ReceiveRequest(Socket socket)
     return builder.ToString();
 }
 
-record Request(string RequestLine, Dictionary<string, string> Headers, string Body);
+record Request(RequestLine RequestLine, Dictionary<string, string> Headers, string Body);
+
+record RequestLine(string Verb, string Target, string Version);
