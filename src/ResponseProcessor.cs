@@ -7,15 +7,22 @@ public static class ResponseProcessor
 {
     public static async Task SendResponse(Socket socket, string message)
     {
-        byte[] responseBytes = Encoding.ASCII.GetBytes(message);
-
-        var bytesSent = 0;
-
-        while (bytesSent < responseBytes.Length)
+        try
         {
-            // This bit basically copied on 19 May 2024 from
-            // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-8.0
-            bytesSent += await socket.SendAsync(responseBytes.AsMemory(bytesSent), SocketFlags.None);
+            byte[] responseBytes = Encoding.ASCII.GetBytes(message);
+
+            var bytesSent = 0;
+
+            while (bytesSent < responseBytes.Length)
+            {
+                // This bit basically copied on 19 May 2024 from
+                // https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=net-8.0
+                bytesSent += await socket.SendAsync(responseBytes.AsMemory(bytesSent), SocketFlags.None);
+            }
+        }
+        finally
+        {
+            await socket.DisconnectAsync(true, CancellationToken.None);
         }
     }
 

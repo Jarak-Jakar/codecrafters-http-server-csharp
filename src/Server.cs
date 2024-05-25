@@ -27,13 +27,6 @@ try
         await ResponseProcessor.SendResponse(socket, response);
 
         Console.WriteLine("Finished sending the response");
-
-        await socket.DisconnectAsync(true, CancellationToken.None);
-        socket.Shutdown(SocketShutdown.Both);
-        socket.Close();
-
-        // Just assuming that we only want to handle the one message, for now
-        break;
     }
 }
 catch (SocketException exception)
