@@ -21,19 +21,28 @@ public static class ResponseProcessor
 
     public static string BuildResponse(Request request)
     {
+        string target = request.RequestLine.Target;
         string statusLine;
         var headers = new Dictionary<string, string>();
         var body = string.Empty;
 
-        if (request.RequestLine.Target.Equals("/", StringComparison.OrdinalIgnoreCase))
+        // I'm sure there's a vastly better way to do thus, but I'll stick with this for now
+        if (target.Equals("/", StringComparison.OrdinalIgnoreCase))
         {
             statusLine = StatusLines.Ok;
         }
-        else if (request.RequestLine.Target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase))
+        else if (target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase))
         {
             // Do the echo situation
             statusLine = StatusLines.Ok;
-            body = request.RequestLine.Target[6..];
+            body = target[6..];
+            headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+            headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+        }
+        else if (target.Equals("/user-agent", StringComparison.OrdinalIgnoreCase))
+        {
+            statusLine = StatusLines.Ok;
+            body = request.Headers["user-agent"]; // Headers should have already been made lower-case.
             headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
             headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
         }
