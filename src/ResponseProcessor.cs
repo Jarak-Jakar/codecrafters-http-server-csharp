@@ -22,11 +22,12 @@ public static class ResponseProcessor
         }
         finally
         {
+            // Honestly, I'm not sure if always disconnecting the socket like this is actually correct...
             await socket.DisconnectAsync(true, CancellationToken.None);
         }
     }
 
-    public static string BuildResponse(Request request)
+    public static string BuildResponse(Request request, string serverDirectory)
     {
         string target = request.RequestLine.Target;
         string statusLine;
@@ -49,6 +50,23 @@ public static class ResponseProcessor
                 body = request.Headers["user-agent"]; // Headers should have already been made lower-case.
                 headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
                 headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+                break;
+            case not null when target.StartsWith("/files/", StringComparison.OrdinalIgnoreCase):
+                string filename = target[7..];
+                string filepath = Path.Join(serverDirectory, filename);
+                if (File.Exists(filepath))
+                {
+                    statusLine = StatusLines.Ok;
+                    // I'm assuming for now that we're only dealing with text files...
+                    body = File.ReadAllText(filepath);
+                    headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                    headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+                }
+                else
+                {
+                    statusLine = StatusLines.NotFound;
+                }
+
                 break;
             default:
                 statusLine = StatusLines.NotFound;
