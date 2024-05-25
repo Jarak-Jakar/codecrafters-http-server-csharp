@@ -13,6 +13,7 @@ public static class StatusLines
 {
     public const string Ok = "HTTP/1.1 200 OK" + Constants.Crlf;
     public const string NotFound = "HTTP/1.1 404 Not Found" + Constants.Crlf;
+    public const string Created = "HTTP/1.1 201 Created" + Constants.Crlf;
 }
 
 public static class HeaderTypes

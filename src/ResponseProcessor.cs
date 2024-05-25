@@ -51,7 +51,8 @@ public static class ResponseProcessor
                 headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
                 headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
                 break;
-            case not null when target.StartsWith("/files/", StringComparison.OrdinalIgnoreCase):
+            case not null when request.RequestLine.Verb.Equals("GET", StringComparison.OrdinalIgnoreCase) &&
+                               target.StartsWith("/files/", StringComparison.OrdinalIgnoreCase):
                 string filename = target[7..];
                 string filepath = Path.Join(serverDirectory, filename);
                 if (File.Exists(filepath))
@@ -67,6 +68,13 @@ public static class ResponseProcessor
                     statusLine = StatusLines.NotFound;
                 }
 
+                break;
+            case not null when request.RequestLine.Verb.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
+                               target.StartsWith("/files/"):
+                filename = target[7..];
+                filepath = Path.Join(serverDirectory, filename);
+                File.WriteAllText(filepath, request.Body);
+                statusLine = StatusLines.Created;
                 break;
             default:
                 statusLine = StatusLines.NotFound;
