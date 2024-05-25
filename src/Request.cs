@@ -60,13 +60,25 @@ public static class RequestProcessor
 
     public static Request ParseRequest(string request)
     {
-        (string requestLine, string _, string body) = ExtractSections(request);
-        return new Request(ParseRequestLine(requestLine), new Dictionary<string, string>(), body);
+        (string requestLine, string headers, string body) = ExtractSections(request);
+        return new Request(ParseRequestLine(requestLine), ParseHeaders(headers), body);
     }
 
-    public static Dictionary<string, string> ParseHeaders(string headers)
+    private static Dictionary<string, string> ParseHeaders(string headers)
     {
-        // Not parsing the headers just yet
-        throw new NotImplementedException();
+        string[] splitHeaders = headers.Split(Constants.Crlf,
+            StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        var headersDict = new Dictionary<string, string>(splitHeaders.Length);
+
+        foreach (string header in splitHeaders)
+        {
+            string[] keyAndValue = header.Split(": ");
+            // The challenge states that header names are case-insensitive, so we ensure that all of them are
+            // consistent in casing here
+            headersDict.Add(keyAndValue[0].ToLowerInvariant(), keyAndValue[1]);
+        }
+
+        return headersDict;
     }
 }
