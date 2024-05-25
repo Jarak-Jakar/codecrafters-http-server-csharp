@@ -59,7 +59,7 @@ public static class ResponseProcessor
                     statusLine = StatusLines.Ok;
                     // I'm assuming for now that we're only dealing with text files...
                     body = File.ReadAllText(filepath);
-                    headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                    headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Application.Octet);
                     headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
                 }
                 else
