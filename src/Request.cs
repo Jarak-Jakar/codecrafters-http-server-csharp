@@ -9,22 +9,6 @@ public record Request(RequestLine RequestLine, Dictionary<string, string> Header
 
 public static class RequestProcessor
 {
-    public static async Task<string> ReceiveRequest(Socket socket)
-    {
-        const int bytesCount = 1 * 1024;
-        var receivedBytes = new byte[bytesCount];
-        var receivedChars = new char[bytesCount];
-        var builder = new StringBuilder();
-
-        int bytesReceived = await socket.ReceiveAsync(receivedBytes, SocketFlags.None, CancellationToken.None);
-
-        Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
-
-        int charCount = Encoding.ASCII.GetChars(receivedBytes, 0, bytesReceived, receivedChars, 0);
-        builder.Append(receivedChars[.. charCount]);
-
-        return builder.ToString();
-    }
 
     private static RequestLine ParseRequestLine(string requestLine)
     {

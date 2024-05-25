@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using codecrafters_http_server;
 
 TcpListener server = null;
@@ -13,7 +14,7 @@ try
     {
         using Socket socket = await server.AcceptSocketAsync();
 
-        string requestString = await RequestProcessor.ReceiveRequest(socket);
+        string requestString = await ReceiveRequest(socket);
 
         Console.WriteLine($"{requestString}");
 
@@ -42,4 +43,23 @@ catch (SocketException exception)
 finally
 {
     server?.Stop();
+}
+
+return;
+
+async Task<string> ReceiveRequest(Socket socket)
+{
+    const int bytesCount = 1 * 1024;
+    var receivedBytes = new byte[bytesCount];
+    var receivedChars = new char[bytesCount];
+    var builder = new StringBuilder();
+
+    int bytesReceived = await socket.ReceiveAsync(receivedBytes, SocketFlags.None, CancellationToken.None);
+
+    Console.WriteLine($"Received {bytesReceived} bytes on the socket.");
+
+    int charCount = Encoding.ASCII.GetChars(receivedBytes, 0, bytesReceived, receivedChars, 0);
+    builder.Append(receivedChars[.. charCount]);
+
+    return builder.ToString();
 }

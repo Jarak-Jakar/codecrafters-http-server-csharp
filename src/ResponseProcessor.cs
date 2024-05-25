@@ -26,29 +26,26 @@ public static class ResponseProcessor
         var headers = new Dictionary<string, string>();
         var body = string.Empty;
 
-        // I'm sure there's a vastly better way to do thus, but I'll stick with this for now
-        if (target.Equals("/", StringComparison.OrdinalIgnoreCase))
+        switch (target)
         {
-            statusLine = StatusLines.Ok;
-        }
-        else if (target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase))
-        {
-            // Do the echo situation
-            statusLine = StatusLines.Ok;
-            body = target[6..];
-            headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
-            headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
-        }
-        else if (target.Equals("/user-agent", StringComparison.OrdinalIgnoreCase))
-        {
-            statusLine = StatusLines.Ok;
-            body = request.Headers["user-agent"]; // Headers should have already been made lower-case.
-            headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
-            headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
-        }
-        else
-        {
-            statusLine = StatusLines.NotFound;
+            case "/":
+                statusLine = StatusLines.Ok;
+                break;
+            case not null when target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase):
+                statusLine = StatusLines.Ok;
+                body = target[6..];
+                headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+                break;
+            case not null when target.StartsWith("/user-agent", StringComparison.OrdinalIgnoreCase):
+                statusLine = StatusLines.Ok;
+                body = request.Headers["user-agent"]; // Headers should have already been made lower-case.
+                headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
+                break;
+            default:
+                statusLine = StatusLines.NotFound;
+                break;
         }
 
         return statusLine + CombineHeaders(headers) + body;
