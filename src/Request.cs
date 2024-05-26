@@ -32,9 +32,6 @@ public static class RequestProcessor
         // Body is everything after the headers
         string body = remainder[headersBoundary..];
 
-        Console.WriteLine(
-            $"{nameof(requestLine)}: {requestLine} --- {nameof(headers)}: {string.Join('\n', headers)} --- {nameof(body)}: {body}");
-
         return (requestLine, headers, body);
     }
 

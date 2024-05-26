@@ -125,14 +125,12 @@ public static class ResponseProcessor
 
         bodyBytes = outputBodyStream.ToArray();
 
-        string bbHex = Convert.ToHexString(bodyBytes);
-
-        Console.WriteLine(bbHex);
-
         int updatedLength = bodyBytes.Length;
         updatedHeaders[HeaderTypes.ContentLength] = updatedLength.ToString();
+
         string metadata = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders));
         byte[] metadataBytes = Encoding.ASCII.GetBytes(metadata);
+
         var returnBytes = new byte[metadataBytes.Length + bodyBytes.Length];
         Buffer.BlockCopy(metadataBytes, 0, returnBytes, 0, metadataBytes.Length);
         Buffer.BlockCopy(bodyBytes, 0, returnBytes, metadataBytes.Length, bodyBytes.Length);
