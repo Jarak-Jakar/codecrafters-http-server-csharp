@@ -1,7 +1,4 @@
-﻿using System.Net.Sockets;
-using System.Text;
-
-namespace codecrafters_http_server;
+﻿namespace codecrafters_http_server;
 
 public record RequestLine(string Verb, string Target, string Version);
 
@@ -9,7 +6,6 @@ public record Request(RequestLine RequestLine, Dictionary<string, string> Header
 
 public static class RequestProcessor
 {
-
     private static RequestLine ParseRequestLine(string requestLine)
     {
         // Assuming for now that there will be exactly one space separating the three parts.  I'm not sure if this is a

@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Mime;
+﻿using System.Net.Mime;
 using System.Net.Sockets;
 using System.Text;
 
@@ -11,8 +10,6 @@ public static class ResponseProcessor
     {
         try
         {
-            // byte[] responseBytes = Encoding.ASCII.GetBytes(message);
-
             var bytesSent = 0;
 
             while (bytesSent < responseBytes.Length)
@@ -44,13 +41,13 @@ public static class ResponseProcessor
             case not null when target.StartsWith("/echo/", StringComparison.OrdinalIgnoreCase):
                 statusLine = StatusLines.Ok;
                 body = target[6..];
-                headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                headers.Add(HeaderTypes.ContentType, MediaTypeNames.Text.Plain);
                 headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
                 break;
             case not null when target.StartsWith("/user-agent", StringComparison.OrdinalIgnoreCase):
                 statusLine = StatusLines.Ok;
                 body = request.Headers["user-agent"]; // Headers should have already been made lower-case.
-                headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Text.Plain);
+                headers.Add(HeaderTypes.ContentType, MediaTypeNames.Text.Plain);
                 headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
                 break;
             case not null when request.RequestLine.Verb.Equals("GET", StringComparison.OrdinalIgnoreCase) &&

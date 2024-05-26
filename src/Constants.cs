@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace codecrafters_http_server;
+﻿namespace codecrafters_http_server;
 
 public static class Constants
 {
