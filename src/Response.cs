@@ -99,7 +99,9 @@ public static class ResponseProcessor
     {
         var updatedHeaders = response.Headers;
         bool tryGet = request.Headers.TryGetValue(HeaderTypes.AcceptEncoding.ToLowerInvariant(), out string? encoding);
-        if (tryGet && encoding!.Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+        // if (tryGet && encoding!.Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+        if (tryGet && encoding!.Split(", ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Contains(Encodings.Gzip))
         {
             updatedHeaders.Add(HeaderTypes.ContentEncoding, Encodings.Gzip);
         }
