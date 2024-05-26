@@ -31,7 +31,7 @@ try
 
         Request request = RequestProcessor.ParseRequest(requestString);
 
-        byte[] response = ResponseProcessor.BuildResponse(request, serverDirectory);
+        byte[] response = await ResponseProcessor.BuildResponse(request, serverDirectory);
 
         Console.WriteLine($"Going to send response: {response}");
 

@@ -1,4 +1,5 @@
-﻿using System.Net.Mime;
+﻿using System.IO.Compression;
+using System.Net.Mime;
 using System.Net.Sockets;
 using System.Text;
 
@@ -26,7 +27,7 @@ public static class ResponseProcessor
         }
     }
 
-    public static byte[] BuildResponse(Request request, string serverDirectory)
+    public static Task<byte[]> BuildResponse(Request request, string serverDirectory)
     {
         string target = request.RequestLine.Target;
         string statusLine;
@@ -95,20 +96,37 @@ public static class ResponseProcessor
         return builder.ToString();
     }
 
-    private static byte[] EncodeMessage(Request request, Response response)
+    private static async Task<byte[]> EncodeMessage(Request request, Response response)
     {
         var updatedHeaders = response.Headers;
         bool tryGet = request.Headers.TryGetValue(HeaderTypes.AcceptEncoding.ToLowerInvariant(), out string? encoding);
-        // if (tryGet && encoding!.Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+
         if (tryGet && encoding!.Split(", ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
                 .Contains(Encodings.Gzip))
         {
             updatedHeaders.Add(HeaderTypes.ContentEncoding, Encodings.Gzip);
         }
 
-        string combined = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders), response.Body);
-        // Not actually changing encodings just yet.
-        return Encoding.ASCII.GetBytes(combined);
+        // This bit of mucking about with streams derived mostly on 26 May 2024 from
+        // https://gigi.nullneuron.net/gigilabs/compressing-strings-using-gzip-in-c/
+        string metadata = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders));
+        byte[] bodyBytes = Encoding.ASCII.GetBytes(request.Body);
+
+        using var outputStream = new MemoryStream(Encoding.ASCII.GetBytes(metadata));
+        using var bodyBytesStream = new MemoryStream(bodyBytes);
+        if (updatedHeaders.ContainsKey(HeaderTypes.ContentEncoding) &&
+            updatedHeaders[HeaderTypes.ContentEncoding.ToLowerInvariant()]
+                .Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+        {
+            await using var gzipStream = new GZipStream(bodyBytesStream, CompressionMode.Compress);
+            await gzipStream.CopyToAsync(outputStream);
+        }
+        else
+        {
+            await bodyBytesStream.CopyToAsync(outputStream);
+        }
+
+        return outputStream.GetBuffer();
     }
 }
 
