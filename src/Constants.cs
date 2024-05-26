@@ -1,4 +1,6 @@
-﻿namespace codecrafters_http_server;
+﻿using System.Text;
+
+namespace codecrafters_http_server;
 
 public static class Constants
 {
@@ -20,4 +22,11 @@ public static class HeaderTypes
 {
     public const string ContentType = "Content-Type";
     public const string ContentLength = "Content-Length";
+    public const string AcceptEncoding = "Accept-Encoding";
+    public const string ContentEncoding = "Content-Encoding";
+}
+
+public static class Encodings
+{
+    public const string Gzip = "gzip";
 }

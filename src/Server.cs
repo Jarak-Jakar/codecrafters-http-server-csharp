@@ -8,7 +8,7 @@ TcpListener server = null;
 try
 {
     var serverDirectory = string.Empty;
-    
+
     Console.WriteLine(string.Join("; ", args));
 
     // I can't be bothered trying to implement command parsing, so I'm just going to assume that we're always passed
@@ -31,7 +31,7 @@ try
 
         Request request = RequestProcessor.ParseRequest(requestString);
 
-        string response = ResponseProcessor.BuildResponse(request, serverDirectory);
+        byte[] response = ResponseProcessor.BuildResponse(request, serverDirectory);
 
         Console.WriteLine($"Going to send response: {response}");
 

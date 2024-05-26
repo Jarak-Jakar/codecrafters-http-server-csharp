@@ -1,15 +1,17 @@
-﻿using System.Net.Sockets;
+﻿using System.Net.Http.Headers;
+using System.Net.Mime;
+using System.Net.Sockets;
 using System.Text;
 
 namespace codecrafters_http_server;
 
 public static class ResponseProcessor
 {
-    public static async Task SendResponse(Socket socket, string message)
+    public static async Task SendResponse(Socket socket, byte[] responseBytes)
     {
         try
         {
-            byte[] responseBytes = Encoding.ASCII.GetBytes(message);
+            // byte[] responseBytes = Encoding.ASCII.GetBytes(message);
 
             var bytesSent = 0;
 
@@ -27,7 +29,7 @@ public static class ResponseProcessor
         }
     }
 
-    public static string BuildResponse(Request request, string serverDirectory)
+    public static byte[] BuildResponse(Request request, string serverDirectory)
     {
         string target = request.RequestLine.Target;
         string statusLine;
@@ -60,7 +62,7 @@ public static class ResponseProcessor
                     statusLine = StatusLines.Ok;
                     // I'm assuming for now that we're only dealing with text files...
                     body = File.ReadAllText(filepath);
-                    headers.Add(HeaderTypes.ContentType, System.Net.Mime.MediaTypeNames.Application.Octet);
+                    headers.Add(HeaderTypes.ContentType, MediaTypeNames.Application.Octet);
                     headers.Add(HeaderTypes.ContentLength, body.Length.ToString());
                 }
                 else
@@ -81,7 +83,7 @@ public static class ResponseProcessor
                 break;
         }
 
-        return statusLine + CombineHeaders(headers) + body;
+        return EncodeMessage(request, new Response(statusLine, headers, body));
     }
 
     private static string CombineHeaders(Dictionary<string, string> headers)
@@ -95,4 +97,20 @@ public static class ResponseProcessor
         builder.Append(Constants.Crlf);
         return builder.ToString();
     }
+
+    private static byte[] EncodeMessage(Request request, Response response)
+    {
+        var updatedHeaders = response.Headers;
+        bool tryGet = request.Headers.TryGetValue(HeaderTypes.AcceptEncoding.ToLowerInvariant(), out string? encoding);
+        if (tryGet && encoding!.Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+        {
+            updatedHeaders.Add(HeaderTypes.ContentEncoding, Encodings.Gzip);
+        }
+
+        string combined = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders), response.Body);
+        // Not actually changing encodings just yet.
+        return Encoding.ASCII.GetBytes(combined);
+    }
 }
+
+public record Response(string StatusLine, Dictionary<string, string> Headers, string Body);
