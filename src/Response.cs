@@ -96,6 +96,7 @@ public static class ResponseProcessor
         return builder.ToString();
     }
 
+    // This whole thing is horrible garbage...
     private static async Task<byte[]> EncodeMessage(Request request, Response response)
     {
         var updatedHeaders = response.Headers;
@@ -107,21 +108,13 @@ public static class ResponseProcessor
             updatedHeaders.Add(HeaderTypes.ContentEncoding, Encodings.Gzip);
         }
 
-        // This bit of mucking about with streams derived mostly on 26 May 2024 from
-        // https://gigi.nullneuron.net/gigilabs/compressing-strings-using-gzip-in-c/
-        // string metadata = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders));
         byte[] bodyBytes = Encoding.ASCII.GetBytes(response.Body);
 
-        // using var outputStream = new MemoryStream(Encoding.ASCII.GetBytes(metadata));
         using var bodyBytesStream = new MemoryStream(bodyBytes);
         using var outputBodyStream = new MemoryStream();
-        if (updatedHeaders.ContainsKey(HeaderTypes.ContentEncoding) &&
-            updatedHeaders[HeaderTypes.ContentEncoding].ToLowerInvariant()
-                .Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
+        if (updatedHeaders.TryGetValue(HeaderTypes.ContentEncoding, out string? value) &&
+            value.ToLowerInvariant().Equals(Encodings.Gzip, StringComparison.OrdinalIgnoreCase))
         {
-            /*await using var gzipStream = new GZipStream(new MemoryStream(bodyBytes), CompressionMode.Compress);
-            gzipStream.CopyTo(outputBodyStream);*/
-
             await using var gzipStream = new GZipStream(outputBodyStream, CompressionMode.Compress);
             await gzipStream.WriteAsync(bodyBytes);
         }
@@ -130,17 +123,16 @@ public static class ResponseProcessor
             await bodyBytesStream.CopyToAsync(outputBodyStream);
         }
 
-        long updatedLength = outputBodyStream.Length;
+        bodyBytes = outputBodyStream.ToArray();
+
+        string bbHex = Convert.ToHexString(bodyBytes);
+
+        Console.WriteLine(bbHex);
+
+        int updatedLength = bodyBytes.Length;
         updatedHeaders[HeaderTypes.ContentLength] = updatedLength.ToString();
         string metadata = string.Concat(response.StatusLine, CombineHeaders(updatedHeaders));
-        // using var outputStream = new MemoryStream(Encoding.ASCII.GetBytes(metadata));
-        var metadataBytes = Encoding.ASCII.GetBytes(metadata);
-        // Need to reset the stream's position before the copy, it turns out
-        // outputBodyStream.Seek(0, SeekOrigin.Begin);
-        bodyBytes = outputBodyStream.ToArray();
-        // outputStream.Seek(0, SeekOrigin.End);
-        // await outputBodyStream.CopyToAsync(outputStream);
-        // return outputStream.ToArray();
+        byte[] metadataBytes = Encoding.ASCII.GetBytes(metadata);
         var returnBytes = new byte[metadataBytes.Length + bodyBytes.Length];
         Buffer.BlockCopy(metadataBytes, 0, returnBytes, 0, metadataBytes.Length);
         Buffer.BlockCopy(bodyBytes, 0, returnBytes, metadataBytes.Length, bodyBytes.Length);
